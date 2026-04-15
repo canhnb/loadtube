@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YT History + Playlist</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT History + Playlist</title>
 
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.youtube.com/iframe_api"></script>
-
-<style>
-body { font-family: sans-serif; }
-.player-container { aspect-ratio: 16/9; background:black; }
-.history-item:hover { background:#1f2937; }
-</style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
 
 <body class="bg-zinc-950 text-white">
@@ -67,7 +61,7 @@ body { font-family: sans-serif; }
 
 <script>
 let history = JSON.parse(localStorage.getItem('ytHistory')) || [];
-let playlist = JSON.parse(localStorage.getItem('ytPlaylist')) || [];
+let playlist = JSON.parse(localStorage.getItem('ytPlaylist') || '[]');
 
 let player;
 let currentPlaylistIndex = -1;
@@ -95,20 +89,33 @@ function extractVideoId(url) {
     return m ? m[1] : null;
 }
 
-function playVideo() {
+async function fetchTitle(id){
+    try{
+        const res = await fetch(`https://noembed.com/embed?url=https://youtube.com/watch?v=${id}`);
+        const data = await res.json();
+        return data.title || id;
+    }catch{
+        return id;
+    }
+}
+
+async function playVideo() {
     if (!player) return alert("Player chưa sẵn sàng");
 
     const url = document.getElementById('url-input').value;
     const id = extractVideoId(url);
     if (!id) return alert("Link sai");
 
+    const title = await fetchTitle(id);
+
     player.loadVideoById(id);
-    addToHistory(id);
+    addToHistory({id, title});
 }
 
 /* ================= HISTORY ================= */
-function addToHistory(id) {
-    history.unshift({ id });
+function addToHistory(video) {
+    history = history.filter(v => v.id !== video.id);
+    history.unshift(video);
     localStorage.setItem('ytHistory', JSON.stringify(history));
     renderHistory();
 }
@@ -119,10 +126,10 @@ function renderHistory() {
 
     history.forEach((v, i) => {
         const div = document.createElement('div');
-        div.className = "history-item p-2 mb-2 flex justify-between bg-zinc-800 cursor-pointer";
+        div.className = "p-2 mb-2 bg-zinc-800 flex justify-between cursor-pointer";
 
         div.innerHTML = `
-            <span>${v.id}</span>
+            <span>${v.title}</span>
             <div>
                 <button onclick="addToPlaylist('${v.id}'); event.stopPropagation()">＋</button>
                 <button onclick="removeHistory(${i}); event.stopPropagation()">🗑</button>
@@ -147,8 +154,11 @@ function savePlaylist() {
 }
 
 function addToPlaylist(id) {
-    if (!playlist.includes(id)) {
-        playlist.push(id);
+    const item = history.find(h => h.id === id);
+    if (!item) return;
+
+    if (!playlist.find(v => v.id === id)) {
+        playlist.push(item);
         savePlaylist();
         renderPlaylist();
     }
@@ -161,12 +171,12 @@ function renderPlaylist() {
     count.textContent = `(${playlist.length})`;
     el.innerHTML = '';
 
-    playlist.forEach((id, i) => {
+    playlist.forEach((v, i) => {
         const div = document.createElement('div');
         div.className = "p-2 bg-zinc-800 flex justify-between";
 
         div.innerHTML = `
-            <span>${id}</span>
+            <span>${v.title}</span>
             <button onclick="removeFromPlaylist(${i})">✕</button>
         `;
 
@@ -200,7 +210,8 @@ function playPlaylistVideo(){
         isPlayingPlaylist = false;
         return;
     }
-    player.loadVideoById(playlist[currentPlaylistIndex]);
+
+    player.loadVideoById(playlist[currentPlaylistIndex].id);
 }
 
 function playNextInPlaylist(){
