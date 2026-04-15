@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>YT History • Xem & Lưu Lịch Sử</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -10,6 +10,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
         body { font-family: 'Inter', system_ui, sans-serif; }
+        
         .player-container {
             aspect-ratio: 16 / 9;
             background: #000;
@@ -17,6 +18,7 @@
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
         }
+
         .history-item {
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -24,273 +26,250 @@
             transform: translateY(-2px);
             background-color: #1f2937;
         }
+
+        /* Responsive cho mobile */
+        @media (max-width: 768px) {
+            .flex.h-screen {
+                flex-direction: column;
+            }
+            .w-96 {
+                width: 100%;
+                max-height: 45vh;
+                border-r: 0;
+                border-b: 1px solid #27272a;
+            }
+            .player-container {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="bg-zinc-950 text-white">
-    <div class="flex h-screen overflow-hidden">
+    <div class="flex h-screen overflow-hidden flex-col md:flex-row">
         <!-- Sidebar -->
-        <div class="w-96 bg-zinc-900 border-r border-zinc-800 flex flex-col">
-            <div class="p-6 border-b border-zinc-800 flex items-center gap-3">
-                <div class="w-9 h-9 bg-red-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">📺</div>
-                <h1 class="text-2xl font-semibold tracking-tight">YT History</h1>
-                <span class="text-xs px-2.5 py-1 bg-zinc-800 text-zinc-400 rounded-full font-medium">beta</span>
+        <div class="w-full md:w-96 bg-zinc-900 border-b md:border-r border-zinc-800 flex flex-col">
+            <!-- Header -->
+            <div class="p-4 md:p-6 border-b border-zinc-800 flex items-center gap-3">
+                <div class="w-9 h-9 bg-red-600 rounded-2xl flex items-center justify-center text-xl">📺</div>
+                <h1 class="text-2xl font-semibold">YT History</h1>
             </div>
 
-            <div class="px-6 pt-6">
+            <!-- Input -->
+            <div class="p-4 md:px-6 md:pt-6">
                 <div class="relative">
-                    <input id="url-input" type="text" placeholder="Dán link YouTube vào đây..."
-                        class="w-full bg-zinc-800 text-white placeholder-zinc-400 border border-zinc-700 focus:border-red-500 rounded-3xl px-5 py-4 text-sm outline-none transition-all">
-                    <button onclick="playVideo()"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 transition-colors text-white px-6 py-2.5 rounded-3xl text-sm font-semibold flex items-center gap-2 shadow-lg">
-                        <span>Xem ngay</span><span class="text-lg">▶</span>
+                    <input id="url-input" type="text" placeholder="Dán link YouTube..."
+                        class="w-full bg-zinc-800 text-white placeholder-zinc-400 border border-zinc-700 focus:border-red-500 rounded-3xl px-5 py-4 text-sm outline-none">
+                    <button onclick="playVideo()" 
+                        class="absolute right-2 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-500 text-white px-6 py-2.5 rounded-3xl text-sm font-semibold">
+                        Xem ngay ▶
                     </button>
                 </div>
             </div>
 
+            <!-- Lịch sử -->
             <div class="flex-1 flex flex-col min-h-0">
-                <div class="px-6 pt-6 pb-3 flex items-center justify-between">
-                    <h2 class="text-lg font-semibold text-zinc-100">Lịch sử xem</h2>
-                    <button onclick="clearAllHistory()" 
-                        class="text-xs px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-zinc-400 hover:text-red-400 transition-colors">
-                        🗑️ Xóa hết
-                    </button>
+                <div class="px-4 md:px-6 pt-4 pb-3 flex justify-between items-center">
+                    <h2 class="text-lg font-semibold">Lịch sử xem</h2>
+                    <button onclick="clearAllHistory()" class="text-xs px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl text-zinc-400">🗑️ Xóa hết</button>
                 </div>
                 <div id="history-list" class="flex-1 overflow-y-auto px-4 space-y-2 pb-6"></div>
             </div>
-
-            <div class="p-4 border-t border-zinc-800 text-[10px] text-zinc-500 flex items-center justify-between">
-                <p>Dữ liệu lưu trong trình duyệt</p>
-                <p onclick="showHelp()" class="cursor-pointer hover:text-zinc-300">Hướng dẫn</p>
-            </div>
         </div>
 
-        <!-- Main content -->
+        <!-- Player area -->
         <div class="flex-1 flex flex-col">
-            <div class="h-16 border-b border-zinc-800 bg-zinc-900 px-8 flex items-center justify-between">
+            <div class="h-14 md:h-16 border-b border-zinc-800 bg-zinc-900 px-4 md:px-8 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div class="text-red-500 text-3xl">▶</div>
-                    <h2 class="text-xl font-semibold">YouTube Player</h2>
+                    <h2 class="text-lg md:text-xl font-semibold">YouTube Player</h2>
                 </div>
-                <div onclick="copyCurrentLink()" class="flex items-center gap-2 cursor-pointer hover:text-red-400 transition-colors">
-                    <span>🔗</span><span class="font-medium">Copy link hiện tại</span>
+                <div onclick="copyCurrentLink()" class="flex items-center gap-2 cursor-pointer hover:text-red-400 text-sm">
+                    🔗 Copy link
                 </div>
             </div>
 
-            <div class="flex-1 flex items-center justify-center p-8 bg-black">
+            <div class="flex-1 flex items-center justify-center p-4 bg-black">
                 <div id="player-wrapper" class="player-container w-full max-w-5xl">
-                    <div id="placeholder" class="h-full flex flex-col items-center justify-center text-center px-10">
-                        <div class="text-7xl mb-8 opacity-80">🎬</div>
-                        <h3 class="text-3xl font-semibold mb-3">Chào mày!</h3>
-                        <p class="text-zinc-400 max-w-md text-lg">Dán link YouTube vào bên trái để xem và lưu tiến độ nhé 🔥</p>
+                    <div id="placeholder" class="h-full flex flex-col items-center justify-center text-center px-6">
+                        <div class="text-6xl mb-6">🎬</div>
+                        <h3 class="text-2xl font-semibold mb-3">Chào mày!</h3>
+                        <p class="text-zinc-400">Dán link hoặc tìm kiếm video bên trên</p>
                     </div>
                     <div id="iframe-container" class="hidden h-full"></div>
                 </div>
             </div>
 
-            <div id="now-playing" class="hidden h-20 bg-zinc-900 border-t border-zinc-800 px-8 items-center gap-4 text-sm">
-                <div class="flex items-center gap-3 flex-1">
-                    <img id="now-thumbnail" src="" class="w-12 h-9 rounded-lg object-cover">
-                    <div>
+            <!-- Now playing -->
+            <div id="now-playing" class="hidden h-16 md:h-20 bg-zinc-900 border-t border-zinc-800 px-4 md:px-8 items-center gap-4 text-sm">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <img id="now-thumbnail" src="" class="w-12 h-9 rounded-lg object-cover flex-shrink-0">
+                    <div class="min-w-0">
                         <p id="now-title" class="font-medium line-clamp-1"></p>
                         <p id="now-time" class="text-xs text-zinc-400"></p>
                     </div>
                 </div>
-                <button onclick="clearCurrentVideo()" 
-                    class="px-5 py-2 text-xs rounded-3xl border border-zinc-700 hover:bg-zinc-800 transition-colors">
-                    Đóng video
-                </button>
+                <button onclick="clearCurrentVideo()" class="px-4 py-2 text-xs rounded-3xl border border-zinc-700 hover:bg-zinc-800">Đóng</button>
             </div>
         </div>
     </div>
 
     <script>
-        let history = JSON.parse(localStorage.getItem('ytHistory')) || []
-        let currentVideoId = null
-        let player = null
-        let progressInterval = null
+        let history = JSON.parse(localStorage.getItem('ytHistory')) || [];
+        let currentVideoId = null;
+        let player = null;
+        let progressInterval = null;
 
         function extractVideoId(url) {
-            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube.com\/shorts\/)([^"&?\/\s]{11})/i
-            const match = url.match(regex)
-            return match ? match[1] : null
+            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube.com\/shorts\/)([^"&?\/\s]{11})/i;
+            const match = url.match(regex);
+            return match ? match[1] : null;
         }
 
         async function fetchVideoTitle(videoId) {
             try {
-                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`)
-                const data = await res.json()
-                return data.title || 'Video không có tiêu đề'
+                const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+                const data = await res.json();
+                return data.title || 'Video YouTube';
             } catch (e) {
-                return 'Video YouTube'
+                return 'Video YouTube';
             }
         }
 
         function getTimeAgo(date) {
-            const now = new Date()
-            const diffMs = now - date
-            const diffMins = Math.floor(diffMs / 60000)
-            if (diffMins < 1) return 'Vừa xong'
-            if (diffMins < 60) return `${diffMins} phút trước`
-            const diffHours = Math.floor(diffMins / 60)
-            if (diffHours < 24) return `${diffHours} giờ trước`
-            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            if (diffMins < 1) return 'Vừa xong';
+            if (diffMins < 60) return `${diffMins} phút trước`;
+            const diffHours = Math.floor(diffMins / 60);
+            if (diffHours < 24) return `${diffHours} giờ trước`;
+            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
         }
 
-        // Render lịch sử với nút xóa từng item
         function renderHistory() {
-            const container = document.getElementById('history-list')
-            container.innerHTML = ''
-
+            const container = document.getElementById('history-list');
+            container.innerHTML = '';
             if (history.length === 0) {
-                container.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-64 text-center opacity-60">
-                        <div class="text-4xl mb-4">📜</div>
-                        <p class="text-zinc-400">Chưa có video nào được xem</p>
-                    </div>`
-                return
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-40 text-center opacity-60"><div class="text-4xl mb-4">📜</div><p>Chưa có video nào</p></div>`;
+                return;
             }
-
             history.forEach((item, index) => {
-                const timeAgo = getTimeAgo(new Date(item.watchedAt))
-                const progress = item.progress ? ` • ${Math.floor(item.progress / 60)}:${(item.progress % 60).toString().padStart(2, '0')}` : ''
-
-                const element = document.createElement('div')
-                element.className = `history-item flex gap-3 p-3 rounded-2xl cursor-pointer mx-2 group`
-                element.innerHTML = `
-                    <img src="https://img.youtube.com/vi/${item.id}/hqdefault.jpg" 
-                         class="w-24 h-14 rounded-xl object-cover shadow-md flex-shrink-0">
+                const timeAgo = getTimeAgo(new Date(item.watchedAt));
+                const progress = item.progress ? ` • ${Math.floor(item.progress/60)}:${(item.progress%60).toString().padStart(2,'0')}` : '';
+                const el = document.createElement('div');
+                el.className = `history-item flex gap-3 p-3 rounded-2xl cursor-pointer group`;
+                el.innerHTML = `
+                    <img src="https://img.youtube.com/vi/${item.id}/hqdefault.jpg" class="w-20 h-12 rounded-xl object-cover flex-shrink-0">
                     <div class="flex-1 min-w-0">
-                        <p class="line-clamp-2 text-sm font-medium leading-tight">${item.title}</p>
-                        <p class="text-xs text-zinc-400 mt-1">${timeAgo}${progress}</p>
+                        <p class="line-clamp-2 text-sm font-medium">${item.title}</p>
+                        <p class="text-xs text-zinc-400">${timeAgo}${progress}</p>
                     </div>
-                    <button onclick="deleteHistoryItem(${index}); event.stopImmediatePropagation()" 
-                            class="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-500 text-xl px-2 transition-all">
-                        🗑️
-                    </button>
-                `
-                element.onclick = () => playHistoryVideo(item.id)
-                container.appendChild(element)
-            })
+                    <button onclick="deleteHistoryItem(${index}); event.stopImmediatePropagation()" class="opacity-0 group-hover:opacity-100 text-red-400 text-xl px-2">🗑️</button>
+                `;
+                el.onclick = () => playHistoryVideo(item.id);
+                container.appendChild(el);
+            });
         }
 
-        // Xóa từng item trong lịch sử
         function deleteHistoryItem(index) {
-            if (confirm('Xóa video này khỏi lịch sử?')) {
-                history.splice(index, 1)
-                localStorage.setItem('ytHistory', JSON.stringify(history))
-                renderHistory()
+            if (confirm('Xóa video này?')) {
+                history.splice(index, 1);
+                localStorage.setItem('ytHistory', JSON.stringify(history));
+                renderHistory();
             }
         }
 
-        // Xóa toàn bộ lịch sử
         function clearAllHistory() {
-            if (confirm('Xóa HẾT lịch sử xem luôn hả? Không khôi phục được đâu!')) {
-                history = []
-                localStorage.removeItem('ytHistory')
-                renderHistory()
+            if (confirm('Xóa hết lịch sử?')) {
+                history = [];
+                localStorage.removeItem('ytHistory');
+                renderHistory();
             }
         }
 
         async function addToHistory(videoId, progress = 0) {
-            const existingIndex = history.findIndex(h => h.id === videoId)
-            if (existingIndex !== -1) history.splice(existingIndex, 1)
-
-            const title = await fetchVideoTitle(videoId)
-            const newEntry = {
-                id: videoId,
-                title: title,
-                watchedAt: new Date().toISOString(),
-                progress: Math.floor(progress)
-            }
-            history.unshift(newEntry)
-            if (history.length > 100) history.pop()
-            localStorage.setItem('ytHistory', JSON.stringify(history))
-            renderHistory()
+            const existing = history.findIndex(h => h.id === videoId);
+            if (existing !== -1) history.splice(existing, 1);
+            const title = await fetchVideoTitle(videoId);
+            history.unshift({ id: videoId, title, watchedAt: new Date().toISOString(), progress: Math.floor(progress) });
+            if (history.length > 100) history.pop();
+            localStorage.setItem('ytHistory', JSON.stringify(history));
+            renderHistory();
         }
 
         function createPlayer(videoId, startSeconds = 0) {
-            if (player) player.destroy()
-
-            const container = document.getElementById('iframe-container')
-            container.innerHTML = `<div id="youtube-player"></div>`
-            container.classList.remove('hidden')
-            document.getElementById('placeholder').classList.add('hidden')
-            document.getElementById('now-playing').classList.remove('hidden')
+            if (player) player.destroy();
+            const container = document.getElementById('iframe-container');
+            container.innerHTML = `<div id="youtube-player"></div>`;
+            container.classList.remove('hidden');
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('now-playing').classList.remove('hidden');
 
             player = new YT.Player('youtube-player', {
                 videoId: videoId,
-                playerVars: { autoplay: 1, rel: 0, modestbranding: 1 },
+                playerVars: {
+                    autoplay: 1,
+                    rel: 0,
+                    modestbranding: 1,
+                    playsinline: 1,           // Quan trọng cho mobile
+                    mute: 0
+                },
                 events: {
-                    'onReady': (event) => {
-                        event.target.seekTo(startSeconds, true)
-                        event.target.playVideo()
-                        currentVideoId = videoId
-
-                        const item = history.find(h => h.id === videoId)
+                    onReady: (e) => {
+                        e.target.seekTo(startSeconds);
+                        currentVideoId = videoId;
+                        const item = history.find(h => h.id === videoId);
                         if (item) {
-                            document.getElementById('now-thumbnail').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
-                            document.getElementById('now-title').textContent = item.title
+                            document.getElementById('now-thumbnail').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                            document.getElementById('now-title').textContent = item.title;
                         }
-
-                        if (progressInterval) clearInterval(progressInterval)
+                        if (progressInterval) clearInterval(progressInterval);
                         progressInterval = setInterval(() => {
                             if (player && player.getPlayerState() === 1) {
-                                addToHistory(videoId, player.getCurrentTime())
+                                addToHistory(videoId, player.getCurrentTime());
                             }
-                        }, 5000)
-                    },
-                    'onStateChange': (event) => {
-                        if (event.data === 0) addToHistory(videoId, player.getDuration())
+                        }, 5000);
                     }
                 }
-            })
+            });
         }
 
         async function playVideo() {
-            const input = document.getElementById('url-input')
-            const url = input.value.trim()
-            if (!url) return alert('Dán link YouTube vô đi bro 😅')
-
-            const videoId = extractVideoId(url)
-            if (!videoId) return alert('Link không hợp lệ!')
-
-            await addToHistory(videoId, 0)
-            createPlayer(videoId, 0)
-            input.value = ''
+            const url = document.getElementById('url-input').value.trim();
+            if (!url) return alert('Dán link YouTube vào đi!');
+            const videoId = extractVideoId(url);
+            if (!videoId) return alert('Link không hợp lệ!');
+            await addToHistory(videoId, 0);
+            createPlayer(videoId, 0);
+            document.getElementById('url-input').value = '';
         }
 
         async function playHistoryVideo(videoId) {
-            const item = history.find(h => h.id === videoId)
-            const startTime = item && item.progress ? item.progress : 0
-            await addToHistory(videoId, startTime)
-            createPlayer(videoId, startTime)
+            const item = history.find(h => h.id === videoId);
+            const start = item && item.progress ? item.progress : 0;
+            await addToHistory(videoId, start);
+            createPlayer(videoId, start);
         }
 
         function clearCurrentVideo() {
-            if (player) player.destroy()
-            if (progressInterval) clearInterval(progressInterval)
-            document.getElementById('placeholder').classList.remove('hidden')
-            document.getElementById('iframe-container').classList.add('hidden')
-            document.getElementById('now-playing').classList.add('hidden')
-            currentVideoId = null
+            if (player) player.destroy();
+            if (progressInterval) clearInterval(progressInterval);
+            document.getElementById('placeholder').classList.remove('hidden');
+            document.getElementById('iframe-container').classList.add('hidden');
+            document.getElementById('now-playing').classList.add('hidden');
+            currentVideoId = null;
         }
 
         function copyCurrentLink() {
-            if (!currentVideoId) return alert('Chưa có video đang xem!')
-            navigator.clipboard.writeText(`https://youtube.com/watch?v=${currentVideoId}`)
+            if (!currentVideoId) return alert('Chưa có video đang xem!');
+            navigator.clipboard.writeText(`https://youtube.com/watch?v=${currentVideoId}`);
         }
 
-        function showHelp() {
-            alert('✅ Tính năng hiện có:\n• Lưu tiến độ thời gian xem\n• Xóa từng video trong lịch sử (click 🗑️)\n• Xóa hết lịch sử\n• Tiếp tục xem từ chỗ cũ')
-        }
-
-        // Khởi tạo
         window.onload = () => {
-            renderHistory()
-            const input = document.getElementById('url-input')
-            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') playVideo() })
-            console.log('%c✅ YT History đã sẵn sàng (có xóa từng cái)!', 'color:#ff0000; font-size:13px; font-weight:bold')
-        }
+            renderHistory();
+            document.getElementById('url-input').addEventListener('keypress', e => { if (e.key === 'Enter') playVideo(); });
+            console.log('%c✅ YT History - Đã tối ưu mobile!', 'color:#ff0000; font-weight:bold');
+        };
     </script>
 </body>
 </html>
